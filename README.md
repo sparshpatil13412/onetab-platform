@@ -1,22 +1,21 @@
-# onetab-platform
+# OneTab (Work in Progress)
 
-# OneTab (Work in Progress)  
-A web app to store and organize files into folders.  
+A web app to store and organize files into folders.
 
 ## Features
 - User authentication (login/signup)
 - Folder creation
 - File uploads per user
 
-## Tech Stack 
+## Tech Stack
 - Flask
 - SQLite
-- SQLAlchemy  
+- SQLAlchemy
 
-## Status 
-⚠️ Still in development  
+## Status
+⚠️ Still in development
 
-## TODO 
+## TODO
 - Improve UI
 - Add file preview
 - Add delete/edit features
