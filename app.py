@@ -3,10 +3,11 @@ from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+import secrets
 import os
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
+app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(16))
 
 # DB config
 app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///users.sqlite3'
@@ -108,7 +109,8 @@ def upload_file(folder_id):
 
         user_folder = os.path.join(
             app.config['UPLOAD_FOLDER'],
-            f"user_{session['user_id']}"
+            f"user_{session['user_id']}",
+            f"folder_{folder_id}"
         )
 
         os.makedirs(user_folder, exist_ok=True)
@@ -207,3 +209,4 @@ if __name__ == "__main__":
         db.create_all()
     os.makedirs("uploads", exist_ok=True)
     app.run(debug=True)
+    
