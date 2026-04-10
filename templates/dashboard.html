@@ -1,21 +1,36 @@
 {% extends "base2.html" %}
-{% block title %}
-    Dashboard
-{% endblock %}
-{% block content%}
-    <h2>Dashboard</h2>
 
-    <form action="/create_folder" method="POST">
-        <input type="text" name="folder_name" placeholder="Folder name" required>
-        <button type="submit">Create Folder</button>
-    </form>
+{% block content %}
 
-    <hr>
+<h2 class="text-2xl font-semibold mb-6">Your Folders</h2>
+
+<!-- Create Folder -->
+<form action="/create_folder" method="POST" class="flex gap-2 mb-6">
+    <input type="text" name="folder_name" placeholder="New folder name"
+        class="px-4 py-2 rounded bg-gray-800 border border-gray-700 w-full">
+    <button class="bg-indigo-600 px-4 py-2 rounded">Create</button>
+</form>
+
+{% if folders %}
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
 
     {% for folder in folders %}
-        <div>
-            <p>{{ folder.name }}</p>
-            <a href="/upload_page/{{ folder.id }}">Upload File</a>
-        </div>
+    <a href="/folder/{{folder.id}}" 
+       class="bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition shadow">
+
+        <div class="text-3xl mb-2">📁</div>
+        <div class="font-semibold text-lg">{{ folder.name }}</div>
+
+    </a>
     {% endfor %}
-{% endblock%}
+
+</div>
+
+{% else %}
+<div class="text-center text-gray-400 mt-10">
+    <p class="text-lg">No folders yet</p>
+    <p>Create your first folder to get started</p>
+</div>
+{% endif %}
+
+{% endblock %}
