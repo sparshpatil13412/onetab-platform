@@ -10,7 +10,10 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(16))
 
 # DB config
-app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///users.sqlite3'
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///users.sqlite3"
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Upload config
@@ -151,6 +154,46 @@ def login():
         flash("Invalid credentials", "error")
 
     return render_template('login.html')
+
+@app.route('/folder/<int:folder_id>')
+def view_folder(folder_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    folder = Folder.query.get(folder_id)
+
+    if not folder or folder.user_id != session['user_id']:
+        return "Unauthorized", 403
+
+    files = File.query.filter_by(folder_id=folder_id).all()
+
+    return render_template("folder.html", folder=folder, files=files)
+
+@app.route('/delete_file/<int:file_id>')
+def delete_file(file_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    file = File.query.get(file_id)
+
+    if not file or file.user_id != session['user_id']:
+        return "Unauthorized", 403
+
+    path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        f"user_{session['user_id']}",
+        f"folder_{file.folder_id}",
+        file.filename
+    )
+
+    if os.path.exists(path):
+        os.remove(path)
+
+    db.session.delete(file)
+    db.session.commit()
+
+    flash("File deleted", "success")
+    return redirect(request.referrer)
 
 
 @app.route('/signup', methods=['GET', 'POST'])

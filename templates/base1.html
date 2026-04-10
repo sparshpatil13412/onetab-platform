@@ -8,6 +8,7 @@
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
 </head>
 
@@ -73,12 +74,12 @@
     </div>
 
     <!-- 📦 Content -->
-    <main class="flex-grow max-w-7xl mx-auto w-full py-8 px-6">
-        {% block content %}{% endblock %}
+    <main class="flex-1 fade-in px-6 py-4">
+            {% block content %}{% endblock %}
     </main>
 
     <!-- 🔻 Footer -->
-    <footer class="bg-gray-800 border-t border-gray-700 text-center py-4 text-sm text-gray-400">
+    <footer class="text-center py-4 bg-gray-800 text-gray-400 mt-10">
         © 2026 OneTab. Built with Flask
     </footer>
 
