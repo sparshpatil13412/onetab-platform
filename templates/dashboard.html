@@ -6,7 +6,7 @@
 
 <!-- Create Folder -->
 <form action="/create_folder" method="POST" class="flex gap-2 mb-6">
-    <input type="text" name="folder_name" placeholder="New folder name"
+    <input type="text" name="folder_name" placeholder="New folder name" required
         class="px-4 py-2 rounded bg-gray-800 border border-gray-700 w-full">
     <button class="bg-indigo-600 px-4 py-2 rounded">Create</button>
 </form>
@@ -15,7 +15,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
 
     {% for folder in folders %}
-    <a href="/folder/{{folder.id}}" 
+    <a href="/folder/{{folder.uuid}}" 
        class="bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition shadow">
 
         <div class="text-3xl mb-2">📁</div>
