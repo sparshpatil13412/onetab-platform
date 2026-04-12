@@ -20,7 +20,7 @@
         <div>📄 {{ file.filename }}</div>
 
         <div class="flex gap-3">
-            <a href="/uploads/user_{{session['user_id']}}/folder_{{folder.id}}/{{file.filename}}" 
+            <a href="/uploads/user_{{session['user_id']}}/folder_{{folder.uuid}}/{{file.filename}}" 
                target="_blank"
                class="text-blue-400">View</a>
 
@@ -46,7 +46,7 @@
 
         <h3 class="text-lg mb-4">Upload File</h3>
 
-        <form action="/upload/{{folder.id}}" method="POST" enctype="multipart/form-data">
+        <form action="/upload/{{folder.uuid}}" method="POST" enctype="multipart/form-data">
             <input type="file" name="file" class="mb-4">
 
             <div class="flex justify-end gap-2">
