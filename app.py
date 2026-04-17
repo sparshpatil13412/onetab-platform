@@ -3,13 +3,18 @@ from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+import secrets
+import uuid
 import os
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
+app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(16))
 
 # DB config
-app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///users.sqlite3'
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///users.sqlite3"
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Upload config
@@ -20,7 +25,7 @@ app.permanent_session_lifetime = timedelta(days=30)
 db = SQLAlchemy(app)
 
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)   
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
@@ -28,6 +33,7 @@ class User(db.Model):
 
 class Folder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(100))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -78,12 +84,12 @@ def create_folder():
     flash("Folder created!", "success")
     return redirect(url_for('dashboard'))
 
-@app.route('/upload_page/<int:folder_id>')
-def upload_page(folder_id):
+@app.route('/upload_page/<string:folder_uuid>')
+def upload_page(folder_uuid):
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    folder = Folder.query.get(folder_id)
+    folder = Folder.query.filter_by(uuid=folder_uuid, user_id=session['user_id']).first()
 
     if not folder or folder.user_id != session['user_id']:
         return "Unauthorized", 403
@@ -91,12 +97,12 @@ def upload_page(folder_id):
     return render_template("upload.html", folder=folder)
 
 
-@app.route('/upload/<int:folder_id>', methods=['POST'])
-def upload_file(folder_id):
+@app.route('/upload/<string:folder_uuid>', methods=['POST'])
+def upload_file(folder_uuid):
     if "user_id" not in session:
         return redirect(url_for('login'))
 
-    folder = Folder.query.get(folder_id)
+    folder = Folder.query.filter_by(uuid=folder_uuid, user_id=session['user_id']).first()
 
     if not folder or folder.user_id != session['user_id']:
         return "Unauthorized", 403
@@ -108,7 +114,8 @@ def upload_file(folder_id):
 
         user_folder = os.path.join(
             app.config['UPLOAD_FOLDER'],
-            f"user_{session['user_id']}"
+            f"user_{session['user_id']}",
+            f"folder_{folder_uuid}"
         )
 
         os.makedirs(user_folder, exist_ok=True)
@@ -119,7 +126,7 @@ def upload_file(folder_id):
         new_file = File(
             filename=filename,
             user_id=session['user_id'],
-            folder_id=folder_id
+            folder_id=folder_uuid
         )
 
         db.session.add(new_file)
@@ -150,6 +157,45 @@ def login():
 
     return render_template('login.html')
 
+@app.route('/folder/<string:folder_uuid>')
+def view_folder(folder_uuid):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    folder = Folder.query.filter_by(uuid=folder_uuid, user_id=session['user_id']).first()
+
+    if not folder or folder.user_id != session['user_id']:
+        return "Unauthorized", 403
+
+    files = File.query.filter_by(folder_id=folder_uuid).all()
+
+    return render_template("folder.html", folder=folder, files=files)
+
+@app.route('/delete_file/<int:file_id>')
+def delete_file(file_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    file = File.query.get(file_id)
+
+    if not file or file.user_id != session['user_id']:
+        return "Unauthorized", 403
+
+    path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        f"user_{session['user_id']}",
+        f"folder_{file.folder_id}",
+        file.filename
+    )
+
+    if os.path.exists(path):
+        os.remove(path)
+
+    db.session.delete(file)
+    db.session.commit()
+
+    flash("File deleted", "success")
+    return redirect(request.referrer or url_for('dashboard'))
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -207,3 +253,4 @@ if __name__ == "__main__":
         db.create_all()
     os.makedirs("uploads", exist_ok=True)
     app.run(debug=True)
+    
