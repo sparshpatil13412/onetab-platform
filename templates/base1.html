@@ -85,17 +85,63 @@
 
     <!-- JS -->
     <script>
-        function toggleDropdown() {
-            document.getElementById("dropdownMenu").classList.toggle("hidden");
+        function handleRename(el) {
+            const form = el.nextElementSibling;
+
+            if (!form) return;
+
+            const input = form.querySelector('input');
+            if (!input) return;
+
+            input.value = el.innerText;
+
+            el.style.display = "none";
+            form.style.display = "inline";
+
+            input.focus();
+
+            // remove old listeners (important)
+            input.onkeydown = null;
+            input.onblur = null;
+
+            input.onkeydown = function(e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    form.submit();
+                }
+                if (e.key === "Escape") {
+                    form.style.display = "none";
+                    el.style.display = "inline";
+                }
+            };
+
+            input.onblur = function() {
+                form.submit();
+            };
         }
 
-        // close when clicking outside (pro touch 😏)
-        window.onclick = function(e) {
-            if (!e.target.closest('#dropdownMenu') && !e.target.closest('button')) {
-                document.getElementById("dropdownMenu").classList.add("hidden");
-            }
+        function editName(el) {
+            handleRename(el);
+        }
+
+        function editFolderName(el) {
+            handleRename(el);
         }
     </script>
+    <script>
+        function toggleDropdown() {
+            const menu = document.getElementById("dropdownMenu");
+            menu.classList.toggle("hidden");
+        }
 
+        // close when clicking outside
+        document.addEventListener("click", function(e) {
+            const dropdown = document.getElementById("dropdownMenu");
+
+            if (!e.target.closest(".relative")) {
+                dropdown.classList.add("hidden");
+            }
+        });
+    </script>
 </body>
 </html>

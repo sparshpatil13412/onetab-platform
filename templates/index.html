@@ -1,7 +1,118 @@
 {% extends "base1.html" %}
-{% block title %}
-    Home Page
+
+{% block content %}
+
+<!-- HERO -->
+
+<section class="flex flex-col items-center justify-center text-center min-h-[80vh] px-6">
+
+<h1 class="text-5xl md:text-6xl font-bold text-white leading-tight">
+    Organize your files
+    <span class="text-indigo-400">without the chaos</span>
+</h1>
+
+<p class="text-gray-400 text-lg mt-6 max-w-2xl">
+    OneTab helps you store, manage, and access your files in a clean,
+    distraction-free workspace. Built for speed. Designed for clarity.
+</p>
+
+<div class="mt-10 flex gap-4">
+    <a href="/signup" class="bg-indigo-600 px-6 py-3 rounded-lg hover:bg-indigo-500 transition">
+        Get Started
+    </a>
+
+    <a href="/login" class="border border-gray-600 px-6 py-3 rounded-lg hover:bg-gray-800 transition">
+        Login
+    </a>
+</div>
+
+</section>
+
+<!-- FEATURES -->
+
+<section class="max-w-6xl mx-auto px-6 py-16 grid md:grid-cols-3 gap-8">
+
+<div class="bg-gray-800 p-6 rounded-xl hover:bg-gray-700 transition">
+    <div class="text-3xl mb-4">⚡</div>
+    <h3 class="text-xl font-semibold mb-2">Blazing Fast</h3>
+    <p class="text-gray-400">
+        Upload and access your files instantly with a smooth, responsive experience.
+    </p>
+</div>
+
+<div class="bg-gray-800 p-6 rounded-xl hover:bg-gray-700 transition">
+    <div class="text-3xl mb-4">🧠</div>
+    <h3 class="text-xl font-semibold mb-2">Smart Organization</h3>
+    <p class="text-gray-400">
+        Structure your folders your way. Keep everything exactly where you expect it.
+    </p>
+</div>
+
+<div class="bg-gray-800 p-6 rounded-xl hover:bg-gray-700 transition">
+    <div class="text-3xl mb-4">🔒</div>
+    <h3 class="text-xl font-semibold mb-2">Secure Access</h3>
+    <p class="text-gray-400">
+        Your files stay private and protected with user-based access control.
+    </p>
+</div>
+
+</section>
+
+<!-- HOW IT WORKS -->
+
+<section class="bg-gray-800/40 py-16 px-6">
+
+<div class="max-w-5xl mx-auto text-center mb-12">
+    <h2 class="text-3xl font-bold">How it works</h2>
+    <p class="text-gray-400 mt-2">Simple workflow. No learning curve.</p>
+</div>
+
+<div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto text-center">
+
+    <div>
+        <div class="text-4xl mb-3">📁</div>
+        <h4 class="font-semibold">Create folders</h4>
+        <p class="text-gray-400 text-sm mt-1">
+            Organize everything into clean categories.
+        </p>
+    </div>
+
+    <div>
+        <div class="text-4xl mb-3">⬆️</div>
+        <h4 class="font-semibold">Upload files</h4>
+        <p class="text-gray-400 text-sm mt-1">
+            Add documents, PDFs, images and more.
+        </p>
+    </div>
+
+    <div>
+        <div class="text-4xl mb-3">🔍</div>
+        <h4 class="font-semibold">Access anytime</h4>
+        <p class="text-gray-400 text-sm mt-1">
+            Find and open your files instantly.
+        </p>
+    </div>
+
+</div>
+
+</section>
+
+<!-- CTA -->
+
+<section class="text-center py-20 px-6">
+
+<h2 class="text-4xl font-bold mb-4">
+    Start organizing today
+</h2>
+
+<p class="text-gray-400 mb-6">
+    No clutter. No confusion. Just your files, perfectly managed.
+</p>
+
+<a href="/signup" class="bg-indigo-600 px-8 py-3 rounded-lg hover:bg-indigo-500 transition">
+    Create your account
+</a>
+
+</section>
+
 {% endblock %}
-{% block content%}
-    <h1>Home Page</h1>
-{% endblock%}

@@ -1,7 +1,85 @@
 {% extends "base2.html" %}
-{% block title %}
-    Profile Page
+
+{% block title %}Profile - OneTab{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="mb-10">
+        <h2 class="text-3xl font-semibold">Profile</h2>
+        <p class="text-gray-400 mt-1">View your account details</p>
+    </div>
+
+    <!-- Profile Card -->
+    <div class="bg-gray-800 p-6 rounded-xl flex items-center justify-between mb-6">
+
+        <div>
+            <h3 class="text-xl font-semibold">
+                {{ session.get('user', 'User') }}
+            </h3>
+            <p class="text-gray-400 text-sm">
+                {{ session.get('email', 'No email') }}
+            </p>
+        </div>
+
+        <div class="w-14 h-14 rounded-full bg-indigo-600 flex items-center justify-center text-xl font-bold">
+            {{ session.get('user', 'U')[0] }}
+        </div>
+
+    </div>
+
+    <!-- Account Info -->
+    <div class="bg-gray-800 p-6 rounded-xl mb-6">
+        <h3 class="text-lg font-semibold mb-4">Account Info</h3>
+
+        <div class="space-y-3 text-gray-300">
+
+            <div class="flex justify-between border-b border-gray-700 pb-2">
+                <span>Name</span>
+                <span>{{ session.get('user', '-') }}</span>
+            </div>
+
+            <div class="flex justify-between border-b border-gray-700 pb-2">
+                <span>Email</span>
+                <span>{{ session.get('email', '-') }}</span>
+            </div>
+
+            <div class="flex justify-between">
+                <span>User ID</span>
+                <span>{{ session.get('user_id', '-') }}</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="bg-gray-800 p-6 rounded-xl">
+
+        <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+
+        <div class="flex flex-wrap gap-3">
+
+            <a href="{{ url_for('settings') }}"
+               class="bg-indigo-600 px-4 py-2 rounded hover:bg-indigo-500 transition">
+               Edit Profile
+            </a>
+
+            <a href="{{ url_for('dashboard') }}"
+               class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600 transition">
+               Dashboard
+            </a>
+
+            <a href="{{ url_for('logout') }}"
+               class="bg-red-600 px-4 py-2 rounded hover:bg-red-500 transition">
+               Logout
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
 {% endblock %}
-{% block content%}
-    <h1>Profile Page</h1>
-{% endblock%}
