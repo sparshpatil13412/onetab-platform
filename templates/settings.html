@@ -1,7 +1,84 @@
 {% extends "base2.html" %}
-{% block title %}
-    Settings
+
+{% block title %}Settings - OneTab{% endblock %}
+
+{% block content %}
+
+<div class="max-w-5xl mx-auto">
+
+<!-- Header -->
+<div class="mb-10">
+    <h2 class="text-3xl font-semibold">Settings</h2>
+    <p class="text-gray-400 mt-1">Manage your account and preferences</p>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed top-5 right-5 bg-green-600 text-white px-4 py-2 rounded shadow"></div>
+
+<!-- Profile -->
+<div class="bg-gray-800 p-6 rounded-xl mb-6 flex items-center justify-between">
+    <div>
+        <h3 class="text-xl font-semibold">{{ session['user'] }}</h3>
+        <p class="text-gray-400 text-sm">{{ session['email'] }}</p>
+    </div>
+    <div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-lg font-bold">
+        {{ session['user'][0] }}
+    </div>
+</div>
+
+<div class="grid md:grid-cols-2 gap-6">
+
+    <!-- Update Name -->
+    <div class="bg-gray-800 p-6 rounded-xl">
+        <h3 class="text-lg font-semibold mb-3">Update Name</h3>
+
+        <form action="/update_name" method="POST" class="space-y-3">
+            <input type="text" name="new_name" required
+                class="w-full px-4 py-2 rounded bg-gray-700 border border-gray-600 text-white">
+
+            <button class="w-full bg-indigo-600 py-2 rounded">Save Changes</button>
+        </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="bg-gray-800 p-6 rounded-xl">
+        <h3 class="text-lg font-semibold mb-3">Change Password</h3>
+
+        <form action="/change_password" method="POST" class="space-y-3">
+
+            <input type="password" name="old_password" required placeholder="Current password"
+                class="w-full px-4 py-2 rounded bg-gray-700 border border-gray-600 text-white">
+
+            <input type="password" name="new_password" required placeholder="New password"
+                class="w-full px-4 py-2 rounded bg-gray-700 border border-gray-600 text-white">
+
+            <button class="w-full bg-indigo-600 py-2 rounded">Update Password</button>
+        </form>
+    </div>
+
+</div>
+
+<!-- Danger Zone -->
+<form action="/delete_account" method="POST">
+    <div class="bg-red-600/20 border border-red-600 p-6 rounded-xl mt-10">
+        <h3 class="text-lg font-semibold mb-3 text-red-400">Danger Zone</h3>
+        <p class="text-red-400 mb-4">Deleting your account is irreversible. All your data will be lost.</p>
+    <button class="bg-red-600 px-4 py-2 rounded hover:bg-red-500">
+        Delete Account
+    </button>
+</form>
+
+<script>
+
+function showToast(msg, success=true) {
+    const toast = document.getElementById("toast");
+    toast.innerText = msg;
+    toast.className = `fixed top-5 right-5 px-4 py-2 rounded text-white ${success ? 'bg-green-600' : 'bg-red-600'}`;
+    toast.classList.remove("hidden");
+
+    setTimeout(() => toast.classList.add("hidden"), 3000);
+}
+
+</script>
+
 {% endblock %}
-{% block content%}
-    <h1>Settings</h1>
-{% endblock%}

@@ -1,71 +1,188 @@
 {% extends "base2.html" %}
 
+{% block title %}{{ folder.name }} - OneTab{% endblock %}
+
 {% block content %}
 
 <div class="flex justify-between items-center mb-6">
     <h2 class="text-2xl font-semibold">{{ folder.name }}</h2>
 
-    <button onclick="openModal()" 
-        class="bg-indigo-600 px-4 py-2 rounded">
-        + Upload
-    </button>
+<button onclick="openModal()" 
+    class="bg-indigo-600 px-4 py-2 rounded">
+    + Upload
+</button>
+
+</div>
+
+<div class="mb-6">
+    <input type="text" id="searchInput"
+       placeholder="Search files..."
+       class="px-4 py-2 rounded bg-gray-800 border border-gray-700 w-full">
 </div>
 
 {% if files %}
+
 <div class="space-y-3">
 
-    {% for file in files %}
-    <div class="bg-gray-800 p-4 rounded flex justify-between items-center">
+{% for file in files %}
+<div class="file-item bg-gray-800 p-4 rounded flex justify-between items-center">
 
-        <div>📄 {{ file.filename }}</div>
+    <!-- LEFT -->
+    <div class="flex items-center gap-2">
+        <span class="filename">
+            📄 {{ file.filename }}
+        </span>
+    </div>
 
-        <div class="flex gap-3">
-            <a href="/uploads/user_{{session['user_id']}}/folder_{{folder.uuid}}/{{file.filename}}" 
+    <!-- RIGHT -->
+    <div class="relative file-dropdown">
+
+        <button onclick="toggleFileDropdown(event, this)" 
+            class="bg-gray-700 px-3 py-1 rounded hover:bg-gray-600">
+            Select
+        </button>
+
+        <!-- Dropdown -->
+        <div class="dropdown-menu hidden absolute right-0 mt-2 w-44 bg-gray-800 rounded border border-gray-700 z-50">
+
+            <a href="/view/{{ file.id }}"  
                target="_blank"
-               class="text-blue-400">View</a>
+               class="block px-4 py-2 text-white hover:bg-gray-700">
+               View
+            </a>
+
+            <button onclick="openRenameModal('{{ file.id }}', '{{ file.filename }}')" 
+                class="block w-full text-left px-4 py-2 text-white hover:bg-gray-700">
+                Rename
+            </button>
+
+            <div class="border-t border-gray-700"></div>
 
             <a href="/delete_file/{{file.id}}" 
-               class="text-red-400">Delete</a>
+               class="block px-4 py-2 text-red-400 hover:bg-gray-700">
+               Delete
+            </a>
+
         </div>
 
     </div>
-    {% endfor %}
+
+</div>
+{% endfor %}
 
 </div>
 
 {% else %}
+
 <div class="text-center text-gray-400 mt-10">
     <p>No files in this folder</p>
 </div>
 {% endif %}
 
 <!-- Upload Modal -->
+
 <div id="uploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-
     <div class="bg-gray-800 p-6 rounded-lg w-96">
-
         <h3 class="text-lg mb-4">Upload File</h3>
 
-        <form action="/upload/{{folder.uuid}}" method="POST" enctype="multipart/form-data">
-            <input type="file" name="file" class="mb-4">
+    <form action="/upload/{{folder.uuid}}" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" class="mb-4">
 
-            <div class="flex justify-end gap-2">
-                <button type="button" onclick="closeModal()" class="px-3 py-1 bg-gray-600 rounded">Cancel</button>
-                <button class="px-3 py-1 bg-indigo-600 rounded">Upload</button>
-            </div>
-        </form>
-
-    </div>
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeModal()" class="px-3 py-1 bg-gray-600 rounded">Cancel</button>
+            <button class="px-3 py-1 bg-indigo-600 rounded">Upload</button>
+        </div>
+    </form>
 </div>
 
+</div>
+
+<!-- Rename Modal -->
+
+<div id="renameModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+
+<div class="bg-gray-800 p-6 rounded-lg w-96">
+
+    <h3 class="text-lg mb-4">Rename File</h3>
+
+    <form id="renameForm" method="POST">
+        <input type="text" id="renameInput" name="new_name"
+               class="w-full mb-4 p-2 rounded bg-gray-700 text-white border border-gray-600">
+
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeRenameModal()" 
+                class="px-3 py-1 bg-gray-600 rounded">Cancel</button>
+
+            <button type="submit" 
+                class="px-3 py-1 bg-indigo-600 rounded">Save</button>
+        </div>
+    </form>
+
+</div>
+
+</div>
+
+<!-- JS -->
+
 <script>
-function openModal() {
-    document.getElementById("uploadModal").classList.remove("hidden");
+
+// Dropdown
+function toggleFileDropdown(e, btn) {
+    e.stopPropagation();
+
+    const menu = btn.nextElementSibling;
+
+    document.querySelectorAll(".dropdown-menu").forEach(m => {
+        if (m !== menu) m.classList.add("hidden");
+    });
+
+    menu.classList.toggle("hidden");
 }
 
-function closeModal() {
-    document.getElementById("uploadModal").classList.add("hidden");
+// Close dropdowns
+document.addEventListener("click", function(e) {
+    if (!e.target.closest(".file-dropdown")) {
+        document.querySelectorAll(".dropdown-menu").forEach(menu => {
+            menu.classList.add("hidden");
+        });
+    }
+});
+
+// Search
+document.getElementById("searchInput").addEventListener("input", function () {
+    const value = this.value.toLowerCase();
+
+    document.querySelectorAll(".file-item").forEach(item => {
+        item.style.display = item.innerText.toLowerCase().includes(value)
+            ? "flex"
+            : "none";
+    });
+});
+
+// Rename Modal
+function openRenameModal(fileId, fileName) {
+    const modal = document.getElementById("renameModal");
+    const input = document.getElementById("renameInput");
+    const form = document.getElementById("renameForm");
+
+    input.value = fileName;
+    form.action = `/rename_file/${fileId}`;
+
+    modal.classList.remove("hidden");
+    input.focus();
 }
+
+function closeRenameModal() {
+    document.getElementById("renameModal").classList.add("hidden");
+}
+
+// close modal on outside click
+document.getElementById("renameModal").addEventListener("click", function(e) {
+    if (e.target === this) {
+        closeRenameModal();
+    }
+});
+
 </script>
 
 {% endblock %}
