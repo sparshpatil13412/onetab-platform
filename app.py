@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, url_for, session, request, f
 from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask import send_from_directory
 from werkzeug.utils import secure_filename
 import secrets
 import uuid
@@ -247,6 +248,115 @@ def settings():
     if "user_id" not in session:
         return redirect(url_for("login"))
     return render_template('settings.html')
+    
+@app.route('/rename_file/<int:file_id>', methods=['POST'])
+def rename_file(file_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    file = File.query.get(file_id)
+
+    if not file or file.user_id != session['user_id']:
+        return "Unauthorized", 403
+
+    new_name = request.form.get("new_name")
+
+    if new_name:
+        old_path = os.path.join(
+            app.config['UPLOAD_FOLDER'],
+            f"user_{session['user_id']}",
+            f"folder_{file.folder_id}",
+            file.filename
+        )
+
+        new_name = secure_filename(new_name)
+
+        new_path = os.path.join(
+            app.config['UPLOAD_FOLDER'],
+            f"user_{session['user_id']}",
+            f"folder_{file.folder_id}",
+            new_name
+        )
+
+        if os.path.exists(old_path):
+            os.rename(old_path, new_path)
+
+        file.filename = new_name
+        db.session.commit()
+
+    return redirect(request.referrer or url_for('dashboard'))
+@app.route('/view/<int:file_id>')
+def view_file(file_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    file = File.query.get(file_id)
+
+    if not file or file.user_id != session['user_id']:
+        return "Unauthorized", 403
+
+    folder_path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        f"user_{session['user_id']}",
+        f"folder_{file.folder_id}"
+    )
+
+    return send_from_directory(folder_path, file.filename)
+
+@app.route('/update_name', methods=['POST'])
+def update_name():
+    if "user_id" not in session:
+        flash("Unauthorized", "error")
+        return redirect(url_for('settings'))
+
+    user = User.query.get(session['user_id'])
+    new_name = request.form['new_name']
+
+    if not new_name:
+        flash("Name cannot be empty", "error")
+        return redirect(url_for('settings'))
+
+    user.name = new_name
+    session['user'] = new_name
+
+    db.session.commit()
+    flash("Name updated successfully", "success")
+    return redirect(url_for('settings'))
+
+@app.route('/change_password', methods=['POST'])
+def change_password():
+    if "user_id" not in session:
+        flash("Unauthorized", "error")
+        return redirect(url_for('settings'))
+
+    user = User.query.get(session['user_id'])
+    old = request.form['old_password']
+    new = request.form['new_password']
+
+    if not check_password_hash(user.password, old):
+        flash("Old password is incorrect", "error")
+        return redirect(url_for('settings'))
+
+    user.password = generate_password_hash(new)
+    db.session.commit()
+
+    flash("Password changed successfully", "success")
+    return redirect(url_for('settings'))
+
+@app.route('/delete_account', methods=['POST'])
+def delete_account():
+    if "user_id" not in session:
+        flash("Unauthorized", "error")
+        return redirect(url_for('settings'))
+
+    user = User.query.get(session['user_id'])
+
+    db.session.delete(user)
+    db.session.commit()
+
+    session.clear()
+    flash("Account deleted", "success")
+    return redirect(url_for('home'))
 
 if __name__ == "__main__":
     with app.app_context():

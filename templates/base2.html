@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>{% block title %}OneTab{% endblock %}</title>
+    <title>{% block title %}{% endblock %}</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -67,12 +67,12 @@
 
     <!-- 📢 Flash Messages -->
     <div class="max-w-4xl mx-auto mt-4 px-6">
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for msg in messages %}
-                    <div class="bg-green-600/20 text-green-400 px-4 py-2 rounded mb-2">
-                        {{ msg }}
-                    </div>
+                {% for category, msg in messages %}
+                <div class="bg-green-600/20 text-green-400 px-4 py-2 rounded mb-2">
+                    {{ msg }}
+                </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
@@ -90,17 +90,99 @@
 
     <!-- JS -->
     <script>
-        function toggleDropdown() {
-            document.getElementById("dropdownMenu").classList.toggle("hidden");
+        function handleRename(el, formClass) {
+        const form = el.nextElementSibling;
+        const input = form.querySelector('input');
+
+        input.value = el.innerText;
+
+        el.style.display = "none";
+        form.style.display = "inline";
+
+        input.focus();
+
+        input.addEventListener("keydown", function(e) {
+            if (e.key === "Enter") {
+            e.preventDefault();
+            form.submit();
+            }
+            if (e.key === "Escape") {
+            form.style.display = "none";
+            el.style.display = "inline";
+            }
+        });
+
+        input.addEventListener("blur", function() {
+            form.submit();
+        });
         }
 
-        // close when clicking outside (pro touch 😏)
-        window.onclick = function(e) {
-            if (!e.target.closest('#dropdownMenu') && !e.target.closest('button')) {
-                document.getElementById("dropdownMenu").classList.add("hidden");
-            }
+        function editName(el) {
+        handleRename(el);
+        }
+
+        function editFolderName(el) {
+        handleRename(el);
         }
     </script>
+    <script>
+        function handleRename(el) {
+            const form = el.nextElementSibling;
 
+            if (!form) return;
+
+            const input = form.querySelector('input');
+            if (!input) return;
+
+            input.value = el.innerText;
+
+            el.style.display = "none";
+            form.style.display = "inline";
+
+            input.focus();
+
+            // remove old listeners (important)
+            input.onkeydown = null;
+            input.onblur = null;
+
+            input.onkeydown = function(e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    form.submit();
+                }
+                if (e.key === "Escape") {
+                    form.style.display = "none";
+                    el.style.display = "inline";
+                }
+            };
+
+            input.onblur = function() {
+                form.submit();
+            };
+        }
+
+        function editName(el) {
+            handleRename(el);
+        }
+
+        function editFolderName(el) {
+            handleRename(el);
+        }
+    </script>
+    <script>
+        function toggleDropdown() {
+            const menu = document.getElementById("dropdownMenu");
+            menu.classList.toggle("hidden");
+        }
+
+        // close when clicking outside
+        document.addEventListener("click", function(e) {
+            const dropdown = document.getElementById("dropdownMenu");
+
+            if (!e.target.closest(".relative")) {
+                dropdown.classList.add("hidden");
+            }
+        });
+    </script>
 </body>
 </html>
