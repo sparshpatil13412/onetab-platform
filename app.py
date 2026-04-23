@@ -1,25 +1,38 @@
-from flask import Flask, render_template, redirect, url_for, session, request, flash
+from flask import Flask, render_template, redirect, url_for, session, request, flash, abort
 from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf import file
+from datetime import datetime, timedelta
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import send_from_directory
 from werkzeug.utils import secure_filename
+from flask_wtf.csrf import CSRFProtect
+from werkzeug.utils import safe_join
+from dotenv import load_dotenv
 import secrets
 import uuid
 import os
 
 app = Flask(__name__)
+load_dotenv()
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"]
+)
+app.config['RATELIMIT_HEADERS_ENABLED'] = True
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(16))
+csrf = CSRFProtect(app)
 
 # DB config
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL",
-    "sqlite:///users.sqlite3"
-)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Upload config
 app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 
 app.permanent_session_lifetime = timedelta(days=30)
 
@@ -30,6 +43,9 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+
+    failed_attempts = db.Column(db.Integer, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
 
 
 class Folder(db.Model):
@@ -44,6 +60,11 @@ class File(db.Model):
     filename = db.Column(db.String(200))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=False)
+
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'xlsx'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route("/")
 @app.route("/home")
@@ -86,6 +107,7 @@ def create_folder():
     return redirect(url_for('dashboard'))
 
 @app.route('/upload_page/<string:folder_uuid>')
+@limiter.limit("10 per minute")
 def upload_page(folder_uuid):
     if "user_id" not in session:
         return redirect(url_for("login"))
@@ -93,7 +115,7 @@ def upload_page(folder_uuid):
     folder = Folder.query.filter_by(uuid=folder_uuid, user_id=session['user_id']).first()
 
     if not folder or folder.user_id != session['user_id']:
-        return "Unauthorized", 403
+        abort(403)
 
     return render_template("upload.html", folder=folder)
 
@@ -106,11 +128,11 @@ def upload_file(folder_uuid):
     folder = Folder.query.filter_by(uuid=folder_uuid, user_id=session['user_id']).first()
 
     if not folder or folder.user_id != session['user_id']:
-        return "Unauthorized", 403
+        abort(403)
 
     file = request.files.get('file')
 
-    if file and file.filename != "":
+    if file and file.filename != "" and allowed_file(file.filename):
         filename = secure_filename(file.filename)
 
         user_folder = os.path.join(
@@ -134,10 +156,13 @@ def upload_file(folder_uuid):
         db.session.commit()
 
         flash("File uploaded!", "success")
+    else:
+        flash("File of this extension not allowed!","error")
 
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('upload_page'))
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if "user_id" in session:
         return redirect(url_for('dashboard'))
@@ -148,13 +173,37 @@ def login():
 
         user = User.query.filter_by(email=email).first()
 
-        if user and check_password_hash(user.password, password):
+        if not user:
+            flash("Invalid credentials", "error")
+            return redirect(url_for('login'))
+
+        # 🔒 Check lock
+        if user.locked_until and datetime.utcnow() < user.locked_until:
+            flash("Account locked. Try again later.", "error")
+            return redirect(url_for('login'))
+
+        # ✅ Correct password
+        if check_password_hash(user.password, password):
+            user.failed_attempts = 0
+            user.locked_until = None
+
             session['user_id'] = user.id
             session['user'] = user.name
             session['email'] = user.email
+
+            db.session.commit()
             return redirect(url_for('dashboard'))
-        
-        flash("Invalid credentials", "error")
+
+        # ❌ Wrong password
+        user.failed_attempts += 1
+
+        if user.failed_attempts >= 5:
+            user.locked_until = datetime.utcnow() + timedelta(minutes=10)
+            flash("Too many attempts. Locked for 10 minutes.", "error")
+        else:
+            flash(f"Invalid credentials ({user.failed_attempts}/5)", "error")
+
+        db.session.commit()
 
     return render_template('login.html')
 
@@ -166,7 +215,7 @@ def view_folder(folder_uuid):
     folder = Folder.query.filter_by(uuid=folder_uuid, user_id=session['user_id']).first()
 
     if not folder or folder.user_id != session['user_id']:
-        return "Unauthorized", 403
+        abort(403)
 
     files = File.query.filter_by(folder_id=folder_uuid).all()
 
@@ -180,7 +229,7 @@ def delete_file(file_id):
     file = File.query.get(file_id)
 
     if not file or file.user_id != session['user_id']:
-        return "Unauthorized", 403
+        abort(403)
 
     path = os.path.join(
         app.config['UPLOAD_FOLDER'],
@@ -199,29 +248,33 @@ def delete_file(file_id):
     return redirect(request.referrer or url_for('dashboard'))
 
 @app.route('/signup', methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
 def signup():
     if request.method == "POST":
         name = request.form['name']
         email = request.form['email']
         password = request.form['password']
 
-        if User.query.filter_by(email=email).first():
-            flash("User already exists", "error")
-            return render_template('signup.html')
+        if len(password) >= 8:
+            if User.query.filter_by(email=email).first():
+                flash("User already exists", "error")
+                return render_template('signup.html')
 
-        hashed_password = generate_password_hash(password)
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
 
-        new_user = User(
-            name=name,
-            email=email,
-            password=hashed_password
-        )
+            new_user = User(
+                name=name,
+                email=email,
+                password=hashed_password
+            )
 
-        db.session.add(new_user)
-        db.session.commit()
+            db.session.add(new_user)
+            db.session.commit()
 
-        flash("Account created!", "success")
-        return redirect(url_for('login'))
+            flash("Account created!", "success")
+            return redirect(url_for('login'))
+        else:
+            flash("Password must be at least 8 characters", "error")
 
     return render_template('signup.html')
 
@@ -257,7 +310,7 @@ def rename_file(file_id):
     file = File.query.get(file_id)
 
     if not file or file.user_id != session['user_id']:
-        return "Unauthorized", 403
+        abort(403)
 
     new_name = request.form.get("new_name")
 
@@ -285,6 +338,7 @@ def rename_file(file_id):
         db.session.commit()
 
     return redirect(request.referrer or url_for('dashboard'))
+
 @app.route('/view/<int:file_id>')
 def view_file(file_id):
     if "user_id" not in session:
@@ -293,7 +347,7 @@ def view_file(file_id):
     file = File.query.get(file_id)
 
     if not file or file.user_id != session['user_id']:
-        return "Unauthorized", 403
+        abort(403)
 
     folder_path = os.path.join(
         app.config['UPLOAD_FOLDER'],
@@ -301,7 +355,8 @@ def view_file(file_id):
         f"folder_{file.folder_id}"
     )
 
-    return send_from_directory(folder_path, file.filename)
+    safe_path = safe_join(folder_path, file.filename)
+    return send_from_directory(safe_path, file.filename)
 
 @app.route('/update_name', methods=['POST'])
 def update_name():
@@ -344,6 +399,7 @@ def change_password():
     return redirect(url_for('settings'))
 
 @app.route('/delete_account', methods=['POST'])
+@limiter.limit("2 per hour")
 def delete_account():
     if "user_id" not in session:
         flash("Unauthorized", "error")
@@ -357,6 +413,66 @@ def delete_account():
     session.clear()
     flash("Account deleted", "success")
     return redirect(url_for('home'))
+
+@app.route('/delete_folder/<string:folder_uuid>', methods=['POST'])
+def delete_folder(folder_uuid):
+    print("DELETE ROUTE HIT:", folder_uuid)
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    folder = Folder.query.filter_by(uuid=folder_uuid, user_id=session['user_id']).first()
+
+    if not folder:
+        abort(403)
+
+    folder_path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        f"user_{session['user_id']}",
+        f"folder_{folder_uuid}"
+    )
+
+    if os.path.exists(folder_path):
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
+        # remove folder itself
+        os.rmdir(folder_path)
+
+    File.query.filter_by(folder_id=folder_uuid).delete()
+
+    db.session.delete(folder)
+    db.session.commit()
+
+    flash("Folder deleted successfully", "success")
+
+    return redirect(url_for('dashboard'))
+
+@app.route('/download/<int:file_id>')
+def download_file(file_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    file = File.query.get(file_id)
+
+    if not file or file.user_id != session['user_id']:
+        abort(403)
+
+    folder_path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        f"user_{session['user_id']}",
+        f"folder_{file.folder_id}"
+    )
+
+    safe_path = safe_join(folder_path, file.filename)
+
+    return send_from_directory(
+        safe_path,
+        file.filename,
+        as_attachment=True,
+        download_name=file.filename.replace("_", " ")
+    )
 
 if __name__ == "__main__":
     with app.app_context():

@@ -10,6 +10,7 @@
 <form action="/create_folder" method="POST" class="flex gap-2 mb-6">
     <input type="text" name="folder_name" placeholder="New folder name" required
         class="px-4 py-2 rounded bg-gray-800 border border-gray-700 w-full">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="bg-indigo-600 px-4 py-2 rounded">Create</button>
 </form>
 
@@ -17,19 +18,32 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
 
     {% for folder in folders %}
-    <a href="/folder/{{folder.uuid}}" 
-       class="bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition shadow">
+    <div 
+        onclick="openFolder('{{ folder.uuid }}')" 
+        class="relative bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition shadow cursor-pointer group"
+    >
 
+        <!-- Folder Icon + Name -->
         <div class="text-3xl mb-2">📁</div>
         <div class="font-semibold text-lg">
-            <span  class="cursor-pointer">
-                {{ folder.name }}
-            </span>
-
-            
+            {{ folder.name }}
         </div>
 
-    </a>
+        <!-- Delete Button -->
+        <button 
+            onclick="confirmDelete(event, '{{ folder.uuid }}')"
+            class="absolute top-3 right-3 text-red-400 text-sm border border-red-500 px-2 py-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-600/20 transition">
+            Delete
+        </button>
+
+        <!-- Hidden Form -->
+        <form id="deleteForm-{{ folder.uuid }}" 
+              action="/delete_folder/{{ folder.uuid }}" 
+              method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        </form>
+
+    </div>
     {% endfor %}
 
 </div>
@@ -40,5 +54,17 @@
     <p>Create your first folder to get started</p>
 </div>
 {% endif %}
+<script>
+function openFolder(uuid) {
+    window.location.href = "/folder/" + uuid;
+}
 
+function confirmDelete(event, id) {
+    event.stopPropagation(); // stops card click
+
+    if (confirm("Are you sure? This cannot be undone.")) {
+        document.getElementById("deleteForm-" + id).submit();
+    }
+}
+</script>
 {% endblock %}
