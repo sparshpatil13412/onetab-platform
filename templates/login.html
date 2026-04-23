@@ -7,6 +7,7 @@
 <div class="flex justify-center items-center min-h-[70vh]">
 
     <form method="POST" class="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <h2 class="text-2xl font-bold text-center text-indigo-400">
             Login
@@ -16,6 +17,7 @@
             <label class="block text-sm mb-1 text-gray-400">Email</label>
             <input type="email" name="email" required
                 class="w-full px-4 py-2 rounded bg-gray-900 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         </div>
 
         <!-- Password -->
@@ -23,6 +25,7 @@
             <label class="block text-sm mb-1 text-gray-400">Password</label>
             <input type="password" name="password" required
                 class="w-full px-4 py-2 rounded bg-gray-900 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         </div>
 
         <!-- Button -->
