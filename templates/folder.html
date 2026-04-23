@@ -30,7 +30,7 @@
     <!-- LEFT -->
     <div class="flex items-center gap-2">
         <span class="filename">
-            📄 {{ file.filename }}
+            📄 {{ file.filename.replace("_", " ") }}
         </span>
     </div>
 
@@ -51,10 +51,15 @@
                View
             </a>
 
-            <button onclick="openRenameModal('{{ file.id }}', '{{ file.filename }}')" 
+            <button data-id="{{ file.id }}" data-filename="{{ file.filename.replace('_',' ') }}" onclick="openRenameModal(this.dataset.id, this.dataset.filename)"
                 class="block w-full text-left px-4 py-2 text-white hover:bg-gray-700">
                 Rename
             </button>
+
+            <a href="/download/{{ file.id }}" 
+               class="block px-4 py-2 text-white hover:bg-gray-700">
+               Download
+            </a>
 
             <div class="border-t border-gray-700"></div>
 
@@ -87,10 +92,13 @@
 
     <form action="/upload/{{folder.uuid}}" method="POST" enctype="multipart/form-data">
         <input type="file" name="file" class="mb-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="flex justify-end gap-2">
             <button type="button" onclick="closeModal()" class="px-3 py-1 bg-gray-600 rounded">Cancel</button>
-            <button class="px-3 py-1 bg-indigo-600 rounded">Upload</button>
+            <button class="px-3 py-1 bg-indigo-600 rounded">
+                Upload
+            </button>
         </div>
     </form>
 </div>
@@ -108,6 +116,7 @@
     <form id="renameForm" method="POST">
         <input type="text" id="renameInput" name="new_name"
                class="w-full mb-4 p-2 rounded bg-gray-700 text-white border border-gray-600">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="flex justify-end gap-2">
             <button type="button" onclick="closeRenameModal()" 
@@ -183,6 +192,16 @@ document.getElementById("renameModal").addEventListener("click", function(e) {
     }
 });
 
+</script>
+
+<script>
+function openModal() {
+    document.getElementById("uploadModal").classList.remove("hidden");
+}
+
+function closeModal() {
+    document.getElementById("uploadModal").classList.add("hidden");
+}
 </script>
 
 {% endblock %}

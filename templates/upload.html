@@ -7,6 +7,9 @@
 
     <form action="/upload/{{folder.uuid}}" method="POST" enctype="multipart/form-data">
         <input type="file" name="file" required>
-        <button type="submit">Upload</button>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">
+            Upload
+        </button>
     </form>
 {% endblock%}
