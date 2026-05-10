@@ -40,8 +40,6 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 app.permanent_session_lifetime = timedelta(days=30)
 
 db = SQLAlchemy(app)
-with app.app_context():
-        db.create_all()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)   
@@ -65,8 +63,11 @@ class File(db.Model):
     filename = db.Column(db.String(200))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=False)  # INT
-    folder_uuid = db.Column(db.String(36), nullable=False)  # UUID
+    folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=False)
+    folder_uuid = db.Column(db.String(36), nullable=False)
+
+with app.app_context():
+        db.create_all()
 
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'xlsx'}
 
