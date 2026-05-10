@@ -40,6 +40,8 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 app.permanent_session_lifetime = timedelta(days=30)
 
 db = SQLAlchemy(app)
+with app.app_context():
+        db.create_all()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)   
@@ -507,6 +509,5 @@ def download_file(file_id):
     return send_from_directory(folder_path, file.filename, as_attachment=True)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run()
     
