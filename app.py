@@ -37,6 +37,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE="Lax"
+)
+
 app.permanent_session_lifetime = timedelta(days=30)
 
 db = SQLAlchemy(app)
@@ -66,8 +72,6 @@ class File(db.Model):
     folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=False)
     folder_uuid = db.Column(db.String(36), nullable=False)
 
-with app.app_context():
-        db.create_all()
 
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'xlsx'}
 
@@ -195,6 +199,8 @@ def login():
         if check_password_hash(user.password, password):
             user.failed_attempts = 0
             user.locked_until = None
+
+            session.permanent = True
 
             session['user_id'] = user.id
             session['user'] = user.name
