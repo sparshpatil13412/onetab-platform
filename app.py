@@ -53,8 +53,7 @@ app.config.update(
 app.permanent_session_lifetime = timedelta(days=30)
 
 db = SQLAlchemy(app)
-with app.app_context():
-    db.create_all()
+
 # Models
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -108,6 +107,8 @@ class File(db.Model):
 
     folder_uuid = db.Column(db.String(36), nullable=False)
 
+with app.app_context():
+    db.create_all()
 
 ALLOWED_EXTENSIONS = {
     'pdf',
