@@ -484,10 +484,47 @@ def settings():
 @app.route('/rename_file/<int:file_id>', methods=['POST'])
 def rename_file(file_id):
 
-    flash(
-        "Rename feature temporarily disabled",
-        "error"
-    )
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    file = File.query.get(file_id)
+
+    if not file or file.user_id != session['user_id']:
+        abort(403)
+
+    new_name = request.form.get("new_name")
+
+    if not new_name:
+        flash("New filename required", "error")
+        return redirect(request.referrer)
+
+    new_name = secure_filename(new_name)
+
+    old_path = file.file_url
+
+    folder_path = old_path.rsplit("/", 1)[0]
+
+    new_path = f"{folder_path}/{new_name}"
+
+    try:
+
+        supabase.storage.from_("uploads").move(
+            old_path,
+            new_path
+        )
+
+        file.filename = new_name
+        file.file_url = new_path
+
+        db.session.commit()
+
+        flash("File renamed successfully", "success")
+
+    except Exception as e:
+
+        print("RENAME ERROR:", e)
+
+        flash("Rename failed", "error")
 
     return redirect(
         request.referrer or url_for('dashboard')
