@@ -51,7 +51,7 @@ Each user gets their own private space to upload, organize, and manage files eff
 ##  Setup Instructions
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/sparshpatil13412/onetab-platform
 cd onetab
 pip install -r requirements.txt
 python app.py
@@ -64,3 +64,7 @@ python app.py
 This project was built as a personal project to practice backend development, authentication systems, and database management using Flask.
 
 ---
+
+## Website
+
+This project is live at https://onetab-platform-jg4a.onrender.com
