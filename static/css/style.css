@@ -139,3 +139,39 @@ a:hover {
 .smooth {
     transition: all 0.2s ease;
 }
+
+@media (max-width: 768px) {
+
+    .navbar {
+        flex-direction: column;
+    }
+
+    .file-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .upload-box {
+        width: 100%;
+    }
+
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.file-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 768px) {
+    .file-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+button {
+    padding: 12px 18px;
+}

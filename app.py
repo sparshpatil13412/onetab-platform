@@ -231,7 +231,7 @@ def upload_file(folder_uuid):
         )
 
         new_file = File(
-            filename=unique_name,
+            filename=filename,
             file_url=file_path,
             user_id=session['user_id'],
             folder_id=folder.id,
